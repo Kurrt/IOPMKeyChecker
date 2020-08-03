@@ -13,7 +13,7 @@ Once all tests are complete the original settings are restored to reset the stat
 If a key succeeds you can then perform further testing on that key to ensure it is used and works in the expected way.
 
 ## "But IOKit contains a method to retrieve unsupported keys from IOPMPreferences"
-This is correct. Internal methods exist to retrieve the keys even when not supported on the current device. It is possible IOKit uses these keys at some point but this would be unusual and through testing has proven not to be used in any significant way. This tool cannot clarify that and should only be used as part of your testing.
+This is correct. Internal methods exist to retrieve the keys even when not supported on the current device. It is possible IOKit uses these keys at some point but this would be unusual and testing has shown they are not used in any significant way. This tool cannot clarify that and should only be used as part of your testing.
 
 ## Usage
 1. Copy the binary from the bin folder onto your device.
@@ -21,7 +21,7 @@ This is correct. Internal methods exist to retrieve the keys even when not suppo
 3. Execute the program. To see the help menu use the flag ```--help```
 
 ## Quick Tests
-2 keys are built in to check for "hibernation" and "deep sleep" (aka stand by). 
+2 keys are built in to check for "hibernation" and "deep sleep" (AKA stand by). 
 - To check for hibernation use the flag ```-h``` or ```--hibernation```
 - To check for deep sleep use the flag ```-d``` or ```--deepsleep```
 
