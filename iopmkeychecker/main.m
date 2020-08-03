@@ -23,10 +23,10 @@
 #define _DEEP_SLEEP_KEY			"Standby Enabled" // This == kIOPMDeepSleepEnabledKey
 
 // Results for printing
-#define _SUCCESS_PRT			"   [SUCESS]\n"
-#define _ERROR_PRT(_err)		"   [ERROR] ("_err")\n"
-#define _ERROR_PRTV(_err)		"%s", [[NSString stringWithFormat:@"   [ERROR] (%@)\n", [NSString stringWithUTF8String:_err]] UTF8String] // ew...
-#define _FAIL_PRT				"   [FAIL]\n"
+#define _SUCCESS_PRT			"[SUCESS]\n"
+#define _ERROR_PRT(_err)		"[ERROR] ("_err")\n"
+#define _ERROR_PRTV(_err)		"%s", [[NSString stringWithFormat:@"[ERROR] (%@)\n", [NSString stringWithUTF8String:_err]] UTF8String] // ew...
+#define _FAIL_PRT				"[FAIL]\n"
 
 #define _SEPARATOR				"---------------------------"
 
@@ -133,10 +133,14 @@ int set_value(const char *key, CFNumberRef value, CFDictionaryRef orig_dict, con
 void try_key(char *key) {
 	printf("Checking if %s is valid for this device...\n", key);
 
+	// kIOPMUPSPowerKey is a possible key but is not available on any tested devices.
+	// We attempt regardless for completeness but warn the user not to be alarmed.
+	printf("\nNote: kIOPMUPSPowerKey generally doesn't exist in iOS. Related errors can be ignored.\n\n");
+
 	int res;
 
 	// Grab the current dictionary to restore later
-	printf("Fetching current keys to restore later...");
+	printf("%-58s", "Fetching current keys to restore later...");
 	CFDictionaryRef orig_dict = IOPMCopyPMPreferences();
 
 	if (!orig_dict) {
@@ -155,7 +159,7 @@ void try_key(char *key) {
 	// Try root values
 	bool root_result = false;
 	bool root_err = false;
-	printf("Trying to set key in root dictionary...");
+	printf("%-58s", "Trying to set key in root dictionary...");
 
 	// Try zero value
 	res = set_value(key, zero_value_ref, orig_dict, NULL);
@@ -171,7 +175,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (root_err) printf(_ERROR_PRT("Unknown Error"));
+	if (root_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
 	else if (root_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -180,7 +184,7 @@ void try_key(char *key) {
 	// Try kIOPMUPSPowerKey values
 	bool upsp_result = false;
 	bool upsp_err = false;
-	printf("Trying to set key in kIOPMUPSPowerKey dictionary...");
+	printf("%-58s", "Trying to set key in kIOPMUPSPowerKey dictionary...");
 
 	// Try zero value
 	res = set_value(key, zero_value_ref, orig_dict, kIOPMUPSPowerKey);
@@ -196,7 +200,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (upsp_err) printf(_ERROR_PRT("Unknown Error"));
+	if (upsp_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
 	else if (upsp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -205,7 +209,7 @@ void try_key(char *key) {
 	// Try kIOPMBatteryPowerKey values
 	bool bp_result = false;
 	bool bp_err = false;
-	printf("Trying to set key in kIOPMBatteryPowerKey dictionary...");
+	printf("%-58s", "Trying to set key in kIOPMBatteryPowerKey dictionary...");
 
 	// Try zero value
 	res = set_value(key, zero_value_ref, orig_dict, kIOPMBatteryPowerKey);
@@ -221,7 +225,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (bp_err) printf(_ERROR_PRT("Unknown Error"));
+	if (bp_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
 	else if (bp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -230,7 +234,7 @@ void try_key(char *key) {
 	// Try kIOPMACPowerKey values
 	bool macp_result = false;
 	bool macp_err = false;
-	printf("Trying to set key in kIOPMACPowerKey dictionary...");
+	printf("%-58s", "Trying to set key in kIOPMACPowerKey dictionary...");
 
 	// Try zero value
 	res = set_value(key, zero_value_ref, orig_dict, kIOPMACPowerKey);
@@ -246,20 +250,20 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (macp_err) printf(_ERROR_PRT("Unknown Error"));
+	if (macp_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
 	else if (macp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
 
 	// Reset to original state
-	printf("Resetting preferences...");
+	printf("%-58s", "Resetting preferences...");
 	IOReturn ret = IOPMSetPMPreferences(orig_dict);
 	const char *err_m = mach_error_string(ret);
 	if (ret!=kIOReturnSuccess) printf(_ERROR_PRTV(err_m));
 	else printf(_SUCCESS_PRT);
 
 	// Clean up
-	printf("Cleaning Up...");
+	printf("%-58s", "Cleaning Up...");
 	CFRelease(orig_dict);
 	CFRelease(one_value_ref);
 	CFRelease(zero_value_ref);
