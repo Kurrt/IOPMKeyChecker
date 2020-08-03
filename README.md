@@ -1,6 +1,8 @@
 # IOPMKeyChecker
 This is a simple tool to test if IOPMPreferences keys exist for the current device.
 
+![Screenshot](https://github.com/Kurrt/IOPMKeyChecker/blob/master/screenshot.png)
+
 #### Note: Built for and tested on iOS. MacOS may work but may need some adjustments
 
 In MacOS and iOS the IOPMPreferences dictionary allows you to manage how the device responds to power management changes through IOKit. Personal testing has shown that iOS completely ignores the values set, but this acts as a helper to check if the keys can be set and help reduce time wasted when testing these keys.
