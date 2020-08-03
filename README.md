@@ -20,6 +20,16 @@ This is correct. Internal methods exist to retrieve the keys even when not suppo
 2. Navigate to the location of the binary.
 3. Execute the program. To see the help menu use the flag ```--help```
 
+## Examples
+- A working key on iPhone 11 Pro Max iOS 13.5 is ```PrioritizeNetworkReachabilityOverSleep```:
+  ```
+  iopmcheck -c PrioritizeNetworkReachabilityOverSleep
+  ```
+- An **invalid** key on iPhone 11 Pro Max iOS 13.5 is ```Hibernate Mode```:
+  ```
+  iopmcheck -c "Hibernate Mode"
+  ```
+
 ## Quick Tests
 2 keys are built in to check for "hibernation" and "deep sleep" (AKA stand by). 
 - To check for hibernation use the flag ```-h``` or ```--hibernation```
