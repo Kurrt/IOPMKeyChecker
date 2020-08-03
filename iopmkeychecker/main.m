@@ -56,6 +56,7 @@ bool compare_saved_values(const char *key, CFNumberRef comp_val, const char *sub
 	SInt32 check_value, comp_value;
 	CFDictionaryRef check_dict = IOPMCopyPMPreferences();
 	if (sub) check_dict = CFDictionaryGetValue(check_dict, CFSTRV(sub));
+	if (!check_dict) return false;
 	CFNumberRef check_value_ref = CFDictionaryGetValue(check_dict, CFSTRV(key));
 	if (!check_value_ref) {
 		CFRelease(check_dict);
@@ -73,7 +74,7 @@ int set_value(const char *key, CFNumberRef value, CFDictionaryRef orig_dict, con
 	CFMutableDictionaryRef alter_dict = NULL;
 	if (sub) {
 		CFDictionaryRef tmp_d = CFDictionaryGetValue(orig_dict, CFSTRV(sub));
-		if (!tmp_d) return 0;
+		if (!tmp_d) tmp_d = (__bridge CFDictionaryRef)@{};
 		alter_dict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, tmp_d);
 	} else {
 		alter_dict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, orig_dict);
@@ -89,6 +90,7 @@ int set_value(const char *key, CFNumberRef value, CFDictionaryRef orig_dict, con
 	sleep(1); // Just incase as this writes to disk and we dont know if there's any async work done.
 	bool res = compare_saved_values(key, value, sub);
 	// Clean Up
+		
 	CFRelease(alter_dict);
 	return (err)?0:((res)?1:2);
 }
@@ -96,10 +98,6 @@ int set_value(const char *key, CFNumberRef value, CFDictionaryRef orig_dict, con
 // Try to set the requested key
 void try_key(char *key) {
 	printf("Checking if %s is valid for this device...\n", key);
-
-	// kIOPMUPSPowerKey is a possible key but is not available on any tested devices.
-	// We attempt regardless for completeness but warn the user not to be alarmed.
-	printf("\nNote: kIOPMUPSPowerKey generally doesn't exist in iOS. Related errors can be ignored.\n\n");
 
 	int res;
 
@@ -139,7 +137,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (root_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
+	if (root_err) printf(_ERROR_PRT("Unknown Error."));
 	else if (root_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -164,7 +162,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (upsp_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
+	if (upsp_err) printf(_ERROR_PRT("Unknown Error."));
 	else if (upsp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -189,7 +187,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (bp_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
+	if (bp_err) printf(_ERROR_PRT("Unknown Error."));
 	else if (bp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -214,7 +212,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (macp_err) printf(_ERROR_PRT("Unknown Error. Possibly non-existent dictionary, if so this can be ignored."));
+	if (macp_err) printf(_ERROR_PRT("Unknown Error."));
 	else if (macp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
