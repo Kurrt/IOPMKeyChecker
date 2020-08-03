@@ -37,7 +37,7 @@ void show_help() {
 	printf("If a key is set successfully it is possible that IOKit still does not make use of the key, you will then need \
 to perform further testing.\n");
 	printf("It is possible for keys to be set and still return false here, however it is extremely unlikely IOKit will \
-ever retrieve this key as it is ignored by the general IOKit retrieval method. Personal testinig has indicated IOKit \
+ever retrieve this key as it is ignored by the general IOKit retrieval method. Personal testing has indicated IOKit \
 ignores these types of keys.\n");
 	printf("All keys will be reset to their original values afterwards.\n\n");
 	printf("By Kurrt and Squiddy.\n\n");
