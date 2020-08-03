@@ -28,7 +28,7 @@
 #define _SEPARATOR              "---------------------------"
 
 // Convenience Macros
-#define CFSTRV(_cstr)					((CFStringRef)[NSString stringWithUTF8String:_cstr]) // CFSTR doesn't support variables
+#define CFSTRV(_cstr)           ((CFStringRef)[NSString stringWithUTF8String:_cstr]) // CFSTR doesn't support variables
 
 // Required methods to allow setuid(0)
 void platformize_me() {
@@ -149,7 +149,7 @@ void try_key(char *key) {
 
 	// We try setting the value to 0 then 1. First we create the CF Refs for the values.
 	SInt32 one_val = 1, zero_val = 0;
-    CFNumberRef one_value_ref  = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &one_val),
+	CFNumberRef one_value_ref  = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &one_val),
     			zero_value_ref = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &zero_val);
 
 
@@ -277,7 +277,7 @@ void try_key(char *key) {
 
 
 int main(int argc, char **argv, char **envp) {
-    @autoreleasepool {
+	@autoreleasepool {
 		printf("\n%s\n\n", _SEPARATOR);
 		if(getuid()!=0) {
 			// If we get here we do not have root privileges.
