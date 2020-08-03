@@ -128,7 +128,7 @@ void try_key(char *key) {
 	root_err = !(res);
 	root_result = (res==1);
 
-	// Preceed only if zero passes
+	// Proceed only if zero passes
 	if (root_result) {
 		// Try one value
 		res = set_value(key, one_value_ref, orig_dict, NULL);
@@ -153,7 +153,7 @@ void try_key(char *key) {
 	upsp_err = !(res);
 	upsp_result = (res==1);
 
-	// Preceed only if zero passes
+	// Proceed only if zero passes
 	if (upsp_result) {
 		// Try one value
 		res = set_value(key, one_value_ref, orig_dict, kIOPMUPSPowerKey);
@@ -178,7 +178,7 @@ void try_key(char *key) {
 	bp_err = !(res);
 	bp_result = (res==1);
 
-	// Preceed only if zero passes
+	// Proceed only if zero passes
 	if (bp_result) {
 		// Try one value
 		res = set_value(key, one_value_ref, orig_dict, kIOPMBatteryPowerKey);
@@ -203,7 +203,7 @@ void try_key(char *key) {
 	macp_err = !(res);
 	macp_result = (res==1);
 
-	// Preceed only if zero passes
+	// Proceed only if zero passes
 	if (macp_result) {
 		// Try one value
 		res = set_value(key, one_value_ref, orig_dict, kIOPMACPowerKey);
