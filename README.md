@@ -29,4 +29,4 @@ This is correct. Internal methods exist to retrieve the keys even when not suppo
 To check other keys use the flag ```-c``` or ```--custom``` followed by your desired key.
 
 ## Us
-This tool was built by **Kurrt** and **Squiddy**
+This tool was built by [Kurrt](https://github.com/Kurrt "Kurrt's Github") and [Squiddy](https://github.com/Squidkingdom "Squiddy's Github")
