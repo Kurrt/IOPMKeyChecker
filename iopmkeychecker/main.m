@@ -5,6 +5,7 @@
 #import <IOKit/pwr_mgt/IOPM.h>
 #import <IOKit/pwr_mgt/IOPMLibPrivate.h>
 #import <IOKit/IOKitLib.h>
+#import <mach/mach_error.h>
 
 #define FLAG_PLATFORMIZE (1 << 1)
 
@@ -23,8 +24,14 @@
 
 // Results for printing
 #define _SUCCESS_PRT			"   [SUCESS]\n"
-#define _ERROR_PRT				"   [ERROR]\n"
+#define _ERROR_PRT(_err)		"   [ERROR] ("_err")\n"
+#define _ERROR_PRTV(_err)		"%s", [[NSString stringWithFormat:@"   [ERROR] (%@)\n", [NSString stringWithUTF8String:_err]] UTF8String] // ew...
 #define _FAIL_PRT				"   [FAIL]\n"
+
+#define _SEPARATOR				"---------------------------"
+
+// Convenience Macros
+#define CFSTRV(_cstr)					((CFStringRef)[NSString stringWithUTF8String:_cstr]) // CFSTR doesn't support variables
 
 // Required methods to allow setuid(0)
 void platformize_me() {
@@ -60,14 +67,14 @@ void patch_setuid() {
 
 // Display the help menu
 void show_help() {
-	printf("IOPMKeyChecker\n");
+	printf("\n\nIOPMKeyChecker\n");
 	printf("Check if IOPM Preferences Keys are valid on the current device.\n");
 	printf("This tool simply attempts to set the given key. If the key is successfully saved we assume it is valid.\n");
 	printf("If a key is set successfully it is possible that IOKit still does not make use of the key, you will then need \
-	to perform further testing.\n");
+to perform further testing.\n");
 	printf("It is possible for keys to be set and still return false here, however it is extremely unlikely IOKit will \
-	ever retrieve this key as it is ignored by the general IOKit retrieval method. Personal testinig has indicated IOKit \
-	ignores these types of keys.\n");
+ever retrieve this key as it is ignored by the general IOKit retrieval method. Personal testinig has indicated IOKit \
+ignores these types of keys.\n");
 	printf("All keys will be reset to their original values afterwards.\n\n");
 	printf("By Kurrt and Squiddy.\n\n");
 	printf("Usage:\n");
@@ -81,33 +88,43 @@ void show_help() {
 }
 
 // Comparison method
-bool compare_saved_values(char *key, SInt32 comp_val, char *sub = NULL) {
-	SInt32 check_val;
+bool compare_saved_values(const char *key, CFNumberRef comp_val, const char *sub) {
+	SInt32 check_value, comp_value;
 	CFDictionaryRef check_dict = IOPMCopyPMPreferences();
-	if (sub) check_dict = CFDictionaryGetValue(check_dict, CFSTR(sub));
-	CFNumberRef check_value_ref = CFDictionaryGetValue(check_dict, CFSTR(key));
-	CFNumberGetValue(check_value_ref, kCFNumberSInt32Type, &check_val);
+	if (sub) check_dict = CFDictionaryGetValue(check_dict, CFSTRV(sub));
+	CFNumberRef check_value_ref = CFDictionaryGetValue(check_dict, CFSTRV(key));
+	if (!check_value_ref) {
+		CFRelease(check_dict);
+		return false;
+	}
+	CFNumberGetValue(check_value_ref, kCFNumberSInt32Type, &check_value);
+	CFNumberGetValue(comp_val, kCFNumberSInt32Type, &comp_value);
 	CFRelease(check_dict);
 	CFRelease(check_value_ref);
-	return (check_val == comp_val);
+	return (check_value == comp_value);
 }
 
 // Set value method (0 = error, 1 = success, 2 = fail)
-int set_value(char *key, CFNumberRef value, CFDictionaryRef orig_dict, char* sub = NULL) {
-	CFMutableDictionaryRef alter_dict = (sub)
-		? CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, CFDictionaryGetValue(orig_dict, CFSTR(sub)))
-		: CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, orig_dict);
-	CFDictionarySetValue(alter_dict, CFSTR(key), value);
+int set_value(const char *key, CFNumberRef value, CFDictionaryRef orig_dict, const char *sub) {
+	CFMutableDictionaryRef alter_dict = NULL;
+	if (sub) {
+		CFDictionaryRef tmp_d = CFDictionaryGetValue(orig_dict, CFSTRV(sub));
+		if (!tmp_d) return 0;
+		alter_dict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, tmp_d);
+	} else {
+		alter_dict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, orig_dict);
+	}
+	CFDictionarySetValue(alter_dict, CFSTRV(key), value);
 	if (sub) {
 		CFMutableDictionaryRef m_orig_dict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, orig_dict);
-		CFDictionarySetValue(m_orig_dict, CFSTR(sub), (CFDictionaryRef)alter_dict)
-		alter_dict = m_orig_dict;
+		CFDictionarySetValue(m_orig_dict, CFSTRV(sub), (CFDictionaryRef)alter_dict);
+		alter_dict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, m_orig_dict);
+		CFRelease(m_orig_dict);
 	}
-	bool err = (IOPMSetPMPreferences((CFDictionaryRef)alter_dict));
-	sleep(1); // Just incase as this writes to disk and we dont know if theres any async work done.
-	bool res = compare_saved_values(key, value);
+	bool err = (IOPMSetPMPreferences((CFDictionaryRef)alter_dict) != kIOReturnSuccess);
+	sleep(1); // Just incase as this writes to disk and we dont know if there's any async work done.
+	bool res = compare_saved_values(key, value, sub);
 	// Clean Up
-	if (sub) CFRelease(m_orig_dict);
 	CFRelease(alter_dict);
 	return (err)?0:((res)?1:2);
 }
@@ -123,7 +140,7 @@ void try_key(char *key) {
 	CFDictionaryRef orig_dict = IOPMCopyPMPreferences();
 
 	if (!orig_dict) {
-		printf(_ERROR_PRT);
+		printf(_ERROR_PRT("IOPMCopyPMPreferences Failed"));
 		return;
 	} else {
 		printf(_SUCCESS_PRT);
@@ -141,20 +158,20 @@ void try_key(char *key) {
 	printf("Trying to set key in root dictionary...");
 
 	// Try zero value
-	res = set_value(key, zero_value_ref, orig_dict);
+	res = set_value(key, zero_value_ref, orig_dict, NULL);
 	root_err = !(res);
 	root_result = (res==1);
 
 	// Preceed only if zero passes
 	if (root_result) {
 		// Try one value
-		res = set_value(key, one_value_ref, orig_dict);
+		res = set_value(key, one_value_ref, orig_dict, NULL);
 		root_err = !(res);
 		root_result = (res==1);
 	}
 
 	// Show result
-	if (root_err) printf(_ERROR_PRT);
+	if (root_err) printf(_ERROR_PRT("Unknown Error"));
 	else if (root_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -179,7 +196,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (upsp_err) printf(_ERROR_PRT);
+	if (upsp_err) printf(_ERROR_PRT("Unknown Error"));
 	else if (upsp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -204,7 +221,7 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (bp_err) printf(_ERROR_PRT);
+	if (bp_err) printf(_ERROR_PRT("Unknown Error"));
 	else if (bp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
 
@@ -229,38 +246,57 @@ void try_key(char *key) {
 	}
 
 	// Show result
-	if (macp_err) printf(_ERROR_PRT);
+	if (macp_err) printf(_ERROR_PRT("Unknown Error"));
 	else if (macp_result) printf(_SUCCESS_PRT);
 	else printf(_FAIL_PRT);
+
+
+	// Reset to original state
+	printf("Resetting preferences...");
+	IOReturn ret = IOPMSetPMPreferences(orig_dict);
+	const char *err_m = mach_error_string(ret);
+	if (ret!=kIOReturnSuccess) printf(_ERROR_PRTV(err_m));
+	else printf(_SUCCESS_PRT);
+
+	// Clean up
+	printf("Cleaning Up...");
+	CFRelease(orig_dict);
+	CFRelease(one_value_ref);
+	CFRelease(zero_value_ref);
+	printf(_SUCCESS_PRT);
 
 
 	// Display overall result
 	printf("\nResult: %s\n", (root_result||root_result||bp_result||macp_result)?"Success":"Fail");
 
+	// Explain for Quick Check Keys
+	if (strcmp(_HIBERNATE_KEY, key)==0) 		printf("\nHibernation is not possible on this device.\n");
+	else if (strcmp(_DEEP_SLEEP_KEY, key)==0) 	printf("\nDeep sleep is not possible on this device.\n");
 }
 
 
 int main(int argc, char **argv, char **envp) {
     @autoreleasepool {
-        patch_setuid();
-        platformize_me();
-        setuid(0);
-        if((chdir("/")) < 0) {
+		printf("\n%s\n\n", _SEPARATOR);
+        if(getuid()!=0) {
 			// If we get here we do not have root privileges.
-			printf("ERROR: Failed to setuid. Try again or try running as root.\n");
-            exit(EXIT_FAILURE);
+			printf("ERROR: This tool must be run as root.\n");
+			printf("\n%s\n\n", _SEPARATOR);
+            return 1;
         }
-		if (!argc) {
+		if (argc==1) {
 			// No argument provided. Show the user the help menu.
 			printf("ERROR: A valid argument must be provided. Showing help.\n\n");
 			show_help();
-			exit(EXIT_FAILURE);
+			printf("\n%s\n\n", _SEPARATOR);
+			return 1;
 		}
 		if (strcmp(argv[1], _HELP) == 0)										 						show_help();
 		else if (strcmp(argv[1], _HIBERNATE_MODE) == 0 || strcmp(argv[1], _HIBERNATE_MODE_LONG) == 0) 	try_key(_HIBERNATE_KEY);
 		else if (strcmp(argv[1], _STAND_BY) == 0 || strcmp(argv[1], _STAND_BY_LONG) == 0) 				try_key(_DEEP_SLEEP_KEY);
-		else if ((strcmp(argv[1], _CUSTOM) == 0 || strcmp(argv[1], _CUSTOM_LONG) == 0) && argc>=2) 		try_key(argv[2]);
+		else if ((strcmp(argv[1], _CUSTOM) == 0 || strcmp(argv[1], _CUSTOM_LONG) == 0) && argc>2) 		try_key(argv[2]);
 		else printf("ERROR: Invalid argument.\n");
+		printf("\n%s\n\n", _SEPARATOR);
     }
     return 0;
 }
