@@ -4,8 +4,6 @@
 #import <IOKit/pwr_mgt/IOPMLibPrivate.h>
 #import <mach/mach_error.h>
 
-#define FLAG_PLATFORMIZE (1 << 1)
-
 // Flags
 #define _HELP                   "--help"
 #define _HIBERNATE_MODE         "-h"
