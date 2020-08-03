@@ -1,34 +1,31 @@
 #include <stdio.h>
 #include <unistd.h>
 #import <dlfcn.h>
-#import <IOKit/pwr_mgt/IOPMLib.h>
-#import <IOKit/pwr_mgt/IOPM.h>
 #import <IOKit/pwr_mgt/IOPMLibPrivate.h>
-#import <IOKit/IOKitLib.h>
 #import <mach/mach_error.h>
 
 #define FLAG_PLATFORMIZE (1 << 1)
 
 // Flags
-#define _HELP					"--help"
-#define _HIBERNATE_MODE			"-h"
-#define _HIBERNATE_MODE_LONG	"--hibernate"
-#define _STAND_BY				"-d"
-#define _STAND_BY_LONG			"--deepsleep"
-#define _CUSTOM					"-c"
-#define _CUSTOM_LONG			"--custom"
+#define _HELP                   "--help"
+#define _HIBERNATE_MODE         "-h"
+#define _HIBERNATE_MODE_LONG    "--hibernate"
+#define _STAND_BY               "-d"
+#define _STAND_BY_LONG          "--deepsleep"
+#define _CUSTOM                 "-c"
+#define _CUSTOM_LONG            "--custom"
 
 // Quick Check Keys
-#define _HIBERNATE_KEY			"Hibernate Mode"
-#define _DEEP_SLEEP_KEY			"Standby Enabled" // This == kIOPMDeepSleepEnabledKey
+#define _HIBERNATE_KEY          "Hibernate Mode"
+#define _DEEP_SLEEP_KEY         "Standby Enabled" // This == kIOPMDeepSleepEnabledKey
 
 // Results for printing
-#define _SUCCESS_PRT			"[SUCESS]\n"
-#define _ERROR_PRT(_err)		"[ERROR] ("_err")\n"
-#define _ERROR_PRTV(_err)		"%s", [[NSString stringWithFormat:@"[ERROR] (%@)\n", [NSString stringWithUTF8String:_err]] UTF8String] // ew...
-#define _FAIL_PRT				"[FAIL]\n"
+#define _SUCCESS_PRT            "[SUCESS]\n"
+#define _ERROR_PRT(_err)        "[ERROR] ("_err")\n"
+#define _ERROR_PRTV(_err)       "%s", [[NSString stringWithFormat:@"[ERROR] (%@)\n", [NSString stringWithUTF8String:_err]] UTF8String] // ew...
+#define _FAIL_PRT               "[FAIL]\n"
 
-#define _SEPARATOR				"---------------------------"
+#define _SEPARATOR              "---------------------------"
 
 // Convenience Macros
 #define CFSTRV(_cstr)					((CFStringRef)[NSString stringWithUTF8String:_cstr]) // CFSTR doesn't support variables
@@ -282,12 +279,12 @@ void try_key(char *key) {
 int main(int argc, char **argv, char **envp) {
     @autoreleasepool {
 		printf("\n%s\n\n", _SEPARATOR);
-        if(getuid()!=0) {
+		if(getuid()!=0) {
 			// If we get here we do not have root privileges.
 			printf("ERROR: This tool must be run as root.\n");
 			printf("\n%s\n\n", _SEPARATOR);
-            return 1;
-        }
+			return 1;
+		}
 		if (argc==1) {
 			// No argument provided. Show the user the help menu.
 			printf("ERROR: A valid argument must be provided. Showing help.\n\n");
@@ -295,12 +292,12 @@ int main(int argc, char **argv, char **envp) {
 			printf("\n%s\n\n", _SEPARATOR);
 			return 1;
 		}
-		if (strcmp(argv[1], _HELP) == 0)										 						show_help();
-		else if (strcmp(argv[1], _HIBERNATE_MODE) == 0 || strcmp(argv[1], _HIBERNATE_MODE_LONG) == 0) 	try_key(_HIBERNATE_KEY);
-		else if (strcmp(argv[1], _STAND_BY) == 0 || strcmp(argv[1], _STAND_BY_LONG) == 0) 				try_key(_DEEP_SLEEP_KEY);
-		else if ((strcmp(argv[1], _CUSTOM) == 0 || strcmp(argv[1], _CUSTOM_LONG) == 0) && argc>2) 		try_key(argv[2]);
+		if (strcmp(argv[1], _HELP) == 0)                                                                show_help();
+		else if (strcmp(argv[1], _HIBERNATE_MODE) == 0 || strcmp(argv[1], _HIBERNATE_MODE_LONG) == 0)   try_key(_HIBERNATE_KEY);
+		else if (strcmp(argv[1], _STAND_BY) == 0 || strcmp(argv[1], _STAND_BY_LONG) == 0)               try_key(_DEEP_SLEEP_KEY);
+		else if ((strcmp(argv[1], _CUSTOM) == 0 || strcmp(argv[1], _CUSTOM_LONG) == 0) && argc>2)       try_key(argv[2]);
 		else printf("ERROR: Invalid argument.\n");
 		printf("\n%s\n\n", _SEPARATOR);
-    }
-    return 0;
+	}
+	return 0;
 }
