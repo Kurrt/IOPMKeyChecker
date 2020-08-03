@@ -233,11 +233,11 @@ void try_key(char *key) {
 
 
 	// Display overall result
-	printf("\nResult: %s\n", (root_result||root_result||bp_result||macp_result)?"Success":"Fail");
+	printf("\nResult: %s\n", (root_result||upsp_result||bp_result||macp_result)?"Success":"Fail");
 
 	// Explain for Quick Check Keys
-	if (strcmp(_HIBERNATE_KEY, key)==0) 		printf("\nHibernation is not possible on this device.\n");
-	else if (strcmp(_DEEP_SLEEP_KEY, key)==0) 	printf("\nDeep sleep is not possible on this device.\n");
+	if (strcmp(_HIBERNATE_KEY, key)==0) 		printf("\nHibernation is%s possible on this device.\n", (root_result||upsp_result||bp_result||macp_result)?"":" not");
+	else if (strcmp(_DEEP_SLEEP_KEY, key)==0) 	printf("\nDeep sleep is%s possible on this device.\n", (root_result||upsp_result||bp_result||macp_result)?"":" not");
 }
 
 
